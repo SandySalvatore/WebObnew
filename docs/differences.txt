@@ -28,7 +28,7 @@ Request
 
 ``languages()``:
     This is available through ``req.accept_language``, particularly
-    ``req.accept_language.best_match(supported_languages)``
+    ``req.accept_language.best_matches(fallback_language)``
 
 ``match_accept(mimetypes)``:
     This is available through ``req.accept.first_match(mimetypes)``;
@@ -61,9 +61,6 @@ Response
 ``flush()`` and ``tell()``:
     Not available.
 
-``tell()``:
-    Available in ``res.body_file.tell()``.
-
 There are also many extra methods and attributes on WebOb Response
 objects.
 
@@ -71,7 +68,7 @@ Django
 ======
 
 This is a quick summary from reading `the Django documentation
-<https://docs.djangoproject.com/en/1.11/ref/request-response/>`_.
+<http://www.djangoproject.com/documentation/request_response/>`_.
 
 Request
 -------
@@ -165,11 +162,11 @@ dictionary-like:
 ``has_header(header)``:
     Use ``header in res.headers``
 
-``flush()``:
+``flush()``, ``tell()``:
     Not available
 
 ``content``:
-    Use ``res.body`` for the ``str`` value, ``res.text`` for
+    Use ``res.body`` for the ``str`` value, ``res.unicode_body`` for
     the ``unicode`` value
 
 Response Subclasses
@@ -183,7 +180,7 @@ CherryPy/TurboGears
 ===================
 
 The `CherryPy request object
-<https://bitbucket.org/cherrypy/cherrypy/wiki/CherryPySpec>`_ is also used by
+<http://www.cherrypy.org/wiki/RequestObject>`_ is also used by
 TurboGears 1.x.
 
 Request
@@ -284,7 +281,7 @@ Response
 --------
 
 From information `from the wiki
-<https://bitbucket.org/cherrypy/cherrypy/wiki/CherryPySpec>`_.
+<http://www.cherrypy.org/wiki/ResponseObject>`_.
 
 ``body``:
     This is an iterable in CherryPy, a string in WebOb;
@@ -321,7 +318,7 @@ From information `from the wiki
 Yaro
 ====
 
-`Yaro <https://pypi.python.org/pypi/yaro>`_ is a small wrapper around
+`Yaro <http://lukearno.com/projects/yaro/>`_ is a small wrapper around
 the WSGI environment, much like WebOb in scope.
 
 The WebOb objects have many more methods and attributes.  The Yaro
@@ -361,11 +358,11 @@ Request
 Werkzeug
 ========
 
-An offshoot of `Pocoo <http://www.pocoo.org/>`_,
+An offshoot of `Pocoo <http://pocoo.org>`_,
 this library is based around WSGI, similar to Paste and Yaro.
 
 This is taken from the `wrapper documentation
-<http://werkzeug.pocoo.org/docs/0.12/wrappers/>`_.
+<http://werkzeug.pocoo.org/documentation/wrappers>`_.
 
 Request
 -------
@@ -397,9 +394,9 @@ Zope 3
 ======
 
 From the Zope 3 interfaces for the `Request
-<https://zopepublisher.readthedocs.io/en/sphinx-docs/browser_api.html#zope.publisher.interfaces.browser.IBrowserRequest>`_
+<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.browser.IBrowserRequest/index.html>`_
 and `Response
-<http://zopepublisher.readthedocs.io/en/sphinx-docs/http_api.html#zope.publisher.interfaces.http.IHTTPResponse>`_.
+<http://apidoc.zope.org/++apidoc++/Interface/zope.publisher.interfaces.http.IHTTPResponse/index.html>`_.
 
 Request
 -------
@@ -542,7 +539,7 @@ mod_python
 ==========
 
 Some key attributes from the `mod_python
-<http://modpython.org/live/current/doc-html/pythonapi.html#request-members>`_
+<http://modpython.org/live/current/doc-html/pyapi-mprequest-mem.html>`_
 request object.
 
 Request
@@ -585,11 +582,8 @@ Response
 webapp Response
 ===============
 
-.. note:: Google App Engine released the successor to webapp, `webapp2
-    <https://cloud.google.com/appengine/docs/standard/python/tools/webapp2>`_.
-
 The Google App Engine `webapp
-<https://cloud.google.com/appengine/docs/standard/python/tools/webapp/>`_
+<http://code.google.com/appengine/docs/python/tools/webapp/>`_
 framework uses the WebOb Request object, but does not use its Response
 object.
 
@@ -622,7 +616,8 @@ while the WebOb response does not set any cache headers.
     write to ``resp.body_file``, but it does not allow unicode.
 
 Besides exposing a ``.headers`` attribute (based on
-:py:class:`wsgiref.headers.Headers`)
+`wsgiref.headers.Headers
+<http://docs.python.org/library/wsgiref.html#wsgiref.headers.Headers>`_)
 there is no other API for the webapp response object.  This means the
 response lacks:
 

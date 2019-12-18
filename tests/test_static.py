@@ -39,15 +39,13 @@ class TestFileApp(unittest.TestCase):
     def test_fileapp(self):
         app = static.FileApp(self.tempfile)
         resp1 = get_response(app)
-        assert resp1.content_type in ('text/x-python', 'text/plain')
+        self.assertEqual(resp1.content_type, 'text/x-python')
         self.assertEqual(resp1.charset, 'UTF-8')
         self.assertEqual(resp1.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
-        self.assertEqual(resp1.body, b"import this\n")
 
         resp2 = get_response(app)
-        assert resp2.content_type in ('text/x-python', 'text/plain')
+        self.assertEqual(resp2.content_type, 'text/x-python')
         self.assertEqual(resp2.last_modified.timetuple(), gmtime(getmtime(self.tempfile)))
-        self.assertEqual(resp2.body, b"import this\n")
 
         resp3 = get_response(app, range=(7, 11))
         self.assertEqual(resp3.status_code, 206)
@@ -191,17 +189,6 @@ class TestDirectoryApp(unittest.TestCase):
 
         # The file exists, but is outside the served dir.
         self.assertEqual(403, get_response(app, '/../bar').status_code)
-
-    def test_dont_leak_parent_directory_file_existance(self):
-        # We'll have:
-        #   /TEST_DIR/
-        #   /TEST_DIR/foo/   <- serve this directory
-        serve_path = os.path.join(self.test_dir, 'foo')
-        os.mkdir(serve_path)
-        app = static.DirectoryApp(serve_path)
-
-        # The file exists, but is outside the served dir.
-        self.assertEqual(403, get_response(app, '/../bar2').status_code)
 
     def test_file_app_arguments(self):
         app = static.DirectoryApp(self.test_dir, content_type='xxx/yyy')

@@ -1,12 +1,14 @@
-import pytest
-
+# -*- coding: utf-8 -*-
 from webob import headers
+from nose.tools import ok_, assert_raises, eq_
+
+class TestError(Exception):
+    pass
 
 def test_ResponseHeaders_delitem_notpresent():
     """Deleting a missing key from ResponseHeaders should raise a KeyError"""
     d = headers.ResponseHeaders()
-    with pytest.raises(KeyError):
-        d.__delitem__('b')
+    assert_raises(KeyError, d.__delitem__, 'b')
 
 def test_ResponseHeaders_delitem_present():
     """
@@ -14,7 +16,7 @@ def test_ResponseHeaders_delitem_present():
     """
     d = headers.ResponseHeaders(a=1)
     del d['a']
-    assert 'a' not in d
+    ok_('a' not in d)
 
 def test_ResponseHeaders_setdefault():
     """Testing set_default for ResponseHeaders"""
@@ -30,30 +32,27 @@ def test_ResponseHeader_pop():
     """Testing if pop return TypeError when more than len(*args)>1 plus other
     assorted tests"""
     d = headers.ResponseHeaders(a=1, b=2, c=3, d=4)
-    with pytest.raises(TypeError):
-        d.pop('a', 'z', 'y')
-    assert d.pop('a') == 1
-    assert 'a' not in d
-    assert d.pop('B') == 2
-    assert 'b' not in d
-    assert d.pop('c', 'u') == 3
-    assert 'c' not in d
-    assert d.pop('e', 'u') == 'u'
-    assert 'e' not in d
-    with pytest.raises(KeyError):
-        d.pop('z')
+    assert_raises(TypeError, d.pop, 'a', 'z', 'y')
+    eq_(d.pop('a'), 1)
+    ok_('a' not in d)
+    eq_(d.pop('B'), 2)
+    ok_('b' not in d)
+    eq_(d.pop('c', 'u'), 3)
+    ok_('c' not in d)
+    eq_(d.pop('e', 'u'), 'u')
+    ok_('e' not in d)
+    assert_raises(KeyError, d.pop, 'z')
 
 def test_ResponseHeaders_getitem_miss():
     d = headers.ResponseHeaders()
-    with pytest.raises(KeyError):
-        d.__getitem__('a')
+    assert_raises(KeyError, d.__getitem__, 'a')
 
 def test_ResponseHeaders_getall():
     d = headers.ResponseHeaders()
     d.add('a', 1)
     d.add('a', 2)
     result = d.getall('a')
-    assert result == [1,2]
+    eq_(result, [1,2])
 
 def test_ResponseHeaders_mixed():
     d = headers.ResponseHeaders()
@@ -61,55 +60,54 @@ def test_ResponseHeaders_mixed():
     d.add('a', 2)
     d['b'] = 1
     result = d.mixed()
-    assert result == {'a':[1,2], 'b':1}
+    eq_(result, {'a':[1,2], 'b':1})
 
 def test_ResponseHeaders_setitem_scalar_replaces_seq():
     d = headers.ResponseHeaders()
     d.add('a', 2)
     d['a'] = 1
     result = d.getall('a')
-    assert result == [1]
+    eq_(result, [1])
 
 def test_ResponseHeaders_contains():
     d = headers.ResponseHeaders()
     d['a'] = 1
-    assert 'a' in d
-    assert not 'b' in d
+    ok_('a' in d)
+    ok_(not 'b' in d)
 
 def test_EnvironHeaders_delitem():
     d = headers.EnvironHeaders({'CONTENT_LENGTH': '10'})
     del d['CONTENT-LENGTH']
     assert not d
-    with pytest.raises(KeyError):
-        d.__delitem__('CONTENT-LENGTH')
+    assert_raises(KeyError, d.__delitem__, 'CONTENT-LENGTH')
 
 def test_EnvironHeaders_getitem():
     d = headers.EnvironHeaders({'CONTENT_LENGTH': '10'})
-    assert d['CONTENT-LENGTH'] == '10'
+    eq_(d['CONTENT-LENGTH'], '10')
 
 def test_EnvironHeaders_setitem():
     d = headers.EnvironHeaders({})
     d['abc'] = '10'
-    assert d['abc'] == '10'
+    eq_(d['abc'], '10')
 
 def test_EnvironHeaders_contains():
     d = headers.EnvironHeaders({})
     d['a'] = '10'
-    assert 'a' in d
-    assert 'b' not in d
+    ok_('a' in d)
+    ok_(not 'b' in d)
 
 def test__trans_key_not_basestring():
     result = headers._trans_key(None)
-    assert result == None
+    eq_(result, None)
 
 def test__trans_key_not_a_header():
     result = headers._trans_key('')
-    assert result == None
+    eq_(result, None)
 
 def test__trans_key_key2header():
     result = headers._trans_key('CONTENT_TYPE')
-    assert result == 'Content-Type'
+    eq_(result, 'Content-Type')
 
 def test__trans_key_httpheader():
     result = headers._trans_key('HTTP_FOO_BAR')
-    assert result == 'Foo-Bar'
+    eq_(result, 'Foo-Bar')

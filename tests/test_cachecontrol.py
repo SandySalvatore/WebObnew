@@ -1,14 +1,18 @@
-import pytest
+from nose.tools import eq_
+from nose.tools import raises
+import unittest
+
 
 def test_cache_control_object_max_age_None():
     from webob.cachecontrol import CacheControl
     cc = CacheControl({}, 'a')
     cc.properties['max-age'] = None
-    assert cc.max_age == -1
+    eq_(cc.max_age, -1)
 
 
-class TestUpdateDict(object):
-    def setup_method(self, method):
+class TestUpdateDict(unittest.TestCase):
+
+    def setUp(self):
         self.call_queue = []
         def callback(args):
             self.call_queue.append("Called with: %s" % repr(args))
@@ -29,7 +33,7 @@ class TestUpdateDict(object):
 
     def test_update(self):
         newone = self.make_one(self.callback)
-        d = {'one': 1}
+        d = {'one' : 1 }
         newone.update(d)
         assert newone == d
 
@@ -47,7 +51,7 @@ class TestUpdateDict(object):
         newone = self.make_one(self.callback)
         assert newone.setdefault('haters', 'gonna-hate') == 'gonna-hate'
         assert len(self.call_queue) == 1
-        assert self.call_queue[-1] == "Called with: {'haters': 'gonna-hate'}"
+        assert self.call_queue[-1] == "Called with: {'haters': 'gonna-hate'}", self.call_queue[-1]
 
         # no effect if failobj is not set
         assert newone.setdefault('haters', 'gonna-love') == 'gonna-hate'
@@ -67,8 +71,12 @@ class TestUpdateDict(object):
         assert len(self.call_queue) == 2
         assert self.call_queue[-1] == 'Called with: {}', self.call_queue[-1]
 
+    def test_callback_args(self):
+        assert True
+        #assert False
 
-class TestExistProp(object):
+
+class TestExistProp(unittest.TestCase):
     """
     Test webob.cachecontrol.exists_property
     """
@@ -96,10 +104,10 @@ class TestExistProp(object):
         obj = self.make_one()()
         assert obj.prop is True
 
+    @raises(AttributeError)
     def test_type_mismatch_raise(self):
-        with pytest.raises(AttributeError):
-            obj = self.make_one()()
-            obj.badprop = True
+        obj = self.make_one()()
+        obj.badprop = True
 
     def test_set_w_value(self):
         obj = self.make_one()()
@@ -110,10 +118,10 @@ class TestExistProp(object):
     def test_del_value(self):
         obj = self.make_one()()
         del obj.prop
-        assert 'prop' not in obj.properties
+        assert not 'prop' in obj.properties
 
 
-class TestValueProp(object):
+class TestValueProp(unittest.TestCase):
     """
     Test webob.cachecontrol.exists_property
     """
@@ -140,6 +148,7 @@ class TestValueProp(object):
     def test_get_on_instance(self):
         dummy = self.make_one()()
         assert dummy.prop, dummy.prop
+        #assert isinstance(Dummy.prop, value_property), Dummy.prop
 
     def test_set_on_instance(self):
         dummy = self.make_one()()
@@ -162,33 +171,34 @@ class TestValueProp(object):
         dummy = Dummy()
         def assign():
             dummy.prop = 'foo'
-        with pytest.raises(AttributeError):
-            assign()
+        self.assertRaises(AttributeError, assign)
 
     def test_set_type_true(self):
         dummy = self.make_one()()
         dummy.prop = True
-        assert dummy.prop is None
+        self.assertEqual(dummy.prop, None)
 
     def test_set_on_instance_w_default(self):
         dummy = self.make_one()()
         dummy.prop = "dummy"
-        assert dummy.prop == "dummy"
-        # TODO: this probably needs more tests
+        assert dummy.prop == "dummy", dummy.prop
+        #@@ this probably needs more tests
 
     def test_del(self):
         dummy = self.make_one()()
         dummy.prop = 'Ian Bicking likes to skip'
         del dummy.prop
-        assert dummy.prop == "dummy"
+        assert dummy.prop == "dummy", dummy.prop
 
 
 def test_copy_cc():
     from webob.cachecontrol import CacheControl
-    cc = CacheControl({'header': '%', "msg": 'arewerichyet?'}, 'request')
+    cc = CacheControl({'header':'%', "msg":'arewerichyet?'}, 'request')
     cc2 = cc.copy()
     assert cc.properties is not cc2.properties
     assert cc.type is cc2.type
+
+# 212
 
 def test_serialize_cache_control_emptydict():
     from webob.cachecontrol import serialize_cache_control
@@ -202,52 +212,51 @@ def test_serialize_cache_control_cache_control_object():
 
 def test_serialize_cache_control_object_with_headers():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': 'a'}, 'request'))
+    result = serialize_cache_control(CacheControl({'header':'a'}, 'request'))
     assert result == 'header=a'
 
 def test_serialize_cache_control_value_is_None():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': None}, 'request'))
+    result = serialize_cache_control(CacheControl({'header':None}, 'request'))
     assert result == 'header'
 
 def test_serialize_cache_control_value_needs_quote():
     from webob.cachecontrol import serialize_cache_control, CacheControl
-    result = serialize_cache_control(CacheControl({'header': '""'}, 'request'))
+    result = serialize_cache_control(CacheControl({'header':'""'}, 'request'))
     assert result == 'header=""""'
 
-class TestCacheControl(object):
+class TestCacheControl(unittest.TestCase):
     def make_one(self, props, typ):
         from webob.cachecontrol import CacheControl
         return CacheControl(props, typ)
 
     def test_ctor(self):
-        cc = self.make_one({'a': 1}, 'typ')
-        assert cc.properties == {'a': 1}
-        assert cc.type == 'typ'
+        cc = self.make_one({'a':1}, 'typ')
+        self.assertEqual(cc.properties, {'a':1})
+        self.assertEqual(cc.type, 'typ')
 
     def test_parse(self):
         from webob.cachecontrol import CacheControl
         cc = CacheControl.parse("public, max-age=315360000")
-        assert type(cc) == CacheControl
-        assert cc.max_age == 315360000
-        assert cc.public is True
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 315360000)
+        self.assertEqual(cc.public, True)
 
     def test_parse_updates_to(self):
         from webob.cachecontrol import CacheControl
-        def foo(arg):
-            return {'a': 1}
+        def foo(arg): return { 'a' : 1 }
         cc = CacheControl.parse("public, max-age=315360000", updates_to=foo)
-        assert type(cc) == CacheControl
-        assert cc.max_age == 315360000
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 315360000)
 
     def test_parse_valueerror_int(self):
         from webob.cachecontrol import CacheControl
-        def foo(arg):
-            return {'a': 1}
+        def foo(arg): return { 'a' : 1 }
         cc = CacheControl.parse("public, max-age=abc")
-        assert type(cc) == CacheControl
-        assert cc.max_age == 'abc'
+        self.assertEqual(type(cc), CacheControl)
+        self.assertEqual(cc.max_age, 'abc')
 
     def test_repr(self):
-        cc = self.make_one({'a': '1'}, 'typ')
-        assert repr(cc) == "<CacheControl 'a=1'>"
+        cc = self.make_one({'a':'1'}, 'typ')
+        result = repr(cc)
+        self.assertEqual(result, "<CacheControl 'a=1'>")

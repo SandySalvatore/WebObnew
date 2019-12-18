@@ -1,8 +1,9 @@
-import pytest
+import unittest
+from webob import Response
+from webob.etag import ETagMatcher, IfRange, etag_property, ETagMatcher
 
-from webob.etag import ETagMatcher, IfRange, etag_property
 
-class Test_etag_properties(object):
+class etag_propertyTests(unittest.TestCase):
     def _makeDummyRequest(self, **kw):
         """
         Return a DummyRequest object with attrs from kwargs.
@@ -18,44 +19,44 @@ class Test_etag_properties(object):
     def test_fget_missing_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
         req = self._makeDummyRequest(environ={})
-        assert ep.fget(req) == "DEFAULT"
+        self.assertEqual(ep.fget(req), "DEFAULT")
 
     def test_fget_found_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY': '"VALUE"'})
+        req = self._makeDummyRequest(environ={'KEY':'"VALUE"'})
         res = ep.fget(req)
-        assert res.etags == ['VALUE']
+        self.assertEqual(res.etags, ['VALUE'])
 
     def test_fget_star_key(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY': '*'})
+        req = self._makeDummyRequest(environ={'KEY':'*'})
         res = ep.fget(req)
         import webob.etag
-        assert type(res) == webob.etag._AnyETag
-        assert res.__dict__ == {}
+        self.assertEqual(type(res), webob.etag._AnyETag)
+        self.assertEqual(res.__dict__, {})
 
     def test_fset_None(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY': '*'})
+        req = self._makeDummyRequest(environ={'KEY':'*'})
         res = ep.fset(req, None)
-        assert res is None
+        self.assertEqual(res, None)
 
     def test_fset_not_None(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY': 'OLDVAL'})
+        req = self._makeDummyRequest(environ={'KEY':'OLDVAL'})
         res = ep.fset(req, "NEWVAL")
-        assert res is None
-        assert req.environ['KEY'] == 'NEWVAL'
+        self.assertEqual(res, None)
+        self.assertEqual(req.environ['KEY'], 'NEWVAL')
 
     def test_fedl(self):
         ep = etag_property("KEY", "DEFAULT", "RFC_SECTION")
-        req = self._makeDummyRequest(environ={'KEY': 'VAL', 'QUAY': 'VALYOU'})
+        req = self._makeDummyRequest(environ={'KEY':'VAL', 'QUAY':'VALYOU'})
         res = ep.fdel(req)
-        assert res is None
-        assert 'KEY' not in req.environ
-        assert req.environ['QUAY'] == 'VALYOU'
+        self.assertEqual(res, None)
+        self.assertFalse('KEY' in req.environ)
+        self.assertEqual(req.environ['QUAY'], 'VALYOU')
 
-class Test_AnyETag(object):
+class AnyETagTests(unittest.TestCase):
     def _getTargetClass(self):
         from webob.etag import _AnyETag
         return _AnyETag
@@ -65,21 +66,25 @@ class Test_AnyETag(object):
 
     def test___repr__(self):
         etag = self._makeOne()
-        assert etag.__repr__() == '<ETag *>'
+        self.assertEqual(etag.__repr__(), '<ETag *>')
 
     def test___nonzero__(self):
         etag = self._makeOne()
-        assert etag.__nonzero__() is False
+        self.assertEqual(etag.__nonzero__(), False)
 
     def test___contains__something(self):
         etag = self._makeOne()
-        assert 'anything' in etag
+        self.assertEqual('anything' in etag, True)
+
+    def test_weak_match_something(self):
+        etag = self._makeOne()
+        self.assertRaises(DeprecationWarning, etag.weak_match, 'anything')
 
     def test___str__(self):
         etag = self._makeOne()
-        assert str(etag) == '*'
+        self.assertEqual(str(etag), '*')
 
-class Test_NoETag(object):
+class NoETagTests(unittest.TestCase):
     def _getTargetClass(self):
         from webob.etag import _NoETag
         return _NoETag
@@ -89,11 +94,11 @@ class Test_NoETag(object):
 
     def test___repr__(self):
         etag = self._makeOne()
-        assert etag.__repr__() == '<No ETag>'
+        self.assertEqual(etag.__repr__(), '<No ETag>')
 
     def test___nonzero__(self):
         etag = self._makeOne()
-        assert etag.__nonzero__() is False
+        self.assertEqual(etag.__nonzero__(), False)
 
     def test___contains__something(self):
         etag = self._makeOne()
@@ -101,62 +106,66 @@ class Test_NoETag(object):
 
     def test___str__(self):
         etag = self._makeOne()
-        assert str(etag) == ''
+        self.assertEqual(str(etag), '')
 
 
-class Test_Parse(object):
+class ParseTests(unittest.TestCase):
     def test_parse_None(self):
         et = ETagMatcher.parse(None)
-        assert et.etags == []
+        self.assertEqual(et.etags, [])
 
     def test_parse_anyetag(self):
         # these tests smell bad, are they useful?
         et = ETagMatcher.parse('*')
-        assert et.__dict__ == {}
-        assert et.__repr__() == '<ETag *>'
+        self.assertEqual(et.__dict__, {})
+        self.assertEqual(et.__repr__(), '<ETag *>')
 
     def test_parse_one(self):
         et = ETagMatcher.parse('"ONE"')
-        assert et.etags == ['ONE']
+        self.assertEqual(et.etags, ['ONE'])
 
     def test_parse_invalid(self):
         for tag in ['one', 'one, two', '"one two']:
             et = ETagMatcher.parse(tag)
-            assert et.etags == [tag]
+            self.assertEqual(et.etags, [tag])
         et = ETagMatcher.parse('"foo" and w/"weak"', strong=False)
-        assert et.etags == ['foo']
+        self.assertEqual(et.etags, ['foo'])
+
 
     def test_parse_commasep(self):
         et = ETagMatcher.parse('"ONE", "TWO"')
-        assert et.etags, ['ONE' == 'TWO']
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
 
     def test_parse_commasep_w_weak(self):
         et = ETagMatcher.parse('"ONE", W/"TWO"')
-        assert et.etags == ['ONE']
+        self.assertEqual(et.etags, ['ONE'])
         et = ETagMatcher.parse('"ONE", W/"TWO"', strong=False)
-        assert et.etags, ['ONE' == 'TWO']
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
 
     def test_parse_quoted(self):
         et = ETagMatcher.parse('"ONE"')
-        assert et.etags == ['ONE']
+        self.assertEqual(et.etags, ['ONE'])
 
     def test_parse_quoted_two(self):
         et = ETagMatcher.parse('"ONE", "TWO"')
-        assert et.etags, ['ONE' == 'TWO']
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
 
     def test_parse_quoted_two_weak(self):
         et = ETagMatcher.parse('"ONE", W/"TWO"')
-        assert et.etags == ['ONE']
+        self.assertEqual(et.etags, ['ONE'])
         et = ETagMatcher.parse('"ONE", W/"TWO"', strong=False)
-        assert et.etags, ['ONE' == 'TWO']
+        self.assertEqual(et.etags, ['ONE', 'TWO'])
 
-class Test_IfRange(object):
+class IfRangeTests(unittest.TestCase):
     def test___repr__(self):
-        assert repr(IfRange(None)) == 'IfRange(None)'
+        self.assertEqual(repr(IfRange(None)), 'IfRange(None)')
 
     def test___repr__etag(self):
-        assert repr(IfRange('ETAG')) == "IfRange('ETAG')"
+        self.assertEqual(repr(IfRange('ETAG')), "IfRange('ETAG')")
 
     def test___repr__date(self):
         ir = IfRange.parse('Fri, 09 Nov 2001 01:08:47 GMT')
-        assert repr(ir) == 'IfRangeDate(datetime.datetime(2001, 11, 9, 1, 8, 47, tzinfo=UTC))'
+        self.assertEqual(
+            repr(ir),
+            'IfRangeDate(datetime.datetime(2001, 11, 9, 1, 8, 47, tzinfo=UTC))'
+        )
